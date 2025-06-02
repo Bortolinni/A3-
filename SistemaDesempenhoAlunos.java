@@ -5,7 +5,7 @@ import java.util.Scanner;
  * Ponto de entrada da aplicação.
  * Inicializa a execução do sistema de desempenho de alunos.
  */
-public class ProjetoDesempenhoAluno {
+public class SistemaDesempenhoAlunos {
     public static void main(String[] args) {
         new Aplicacao().executar();
     }
