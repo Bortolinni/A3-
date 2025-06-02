@@ -1,82 +1,272 @@
+import java.util.ArrayList;
 import java.util.Scanner;
 
+/**
+ * Ponto de entrada da aplicação.
+ * Inicializa a execução do sistema de desempenho de alunos.
+ */
 public class ProjetoDesempenhoAluno {
     public static void main(String[] args) {
-        final int TOTAL_ALUNOS = 50;
-        Scanner scanner = new Scanner(System.in);
+        new Aplicacao().executar();
+    }
+}
 
-        String[] nomesAprovados = new String[TOTAL_ALUNOS];
-        int[] notasAprovados = new int[TOTAL_ALUNOS];
-        int countAprovados = 0;
+// ---------------- CLASSE DOMÍNIO ----------------
 
-        int aprovadosMasculino = 0;
-        int reprovadosFeminino = 0;
-        int somaNotasFemininas = 0;
-        int countFemininas = 0;
-        int somaNotasGeral = 0;
+/**
+ * Entidade que representa um aluno.
+ */
+class Aluno {
+    private String nome;
+    private int nota;
+    private char sexo;
 
-        for (int i = 0; i < TOTAL_ALUNOS; i++) {
-            System.out.println("Aluno " + (i + 1));
+    public Aluno(String nome, int nota, char sexo) {
+        this.nome = nome;
+        this.nota = nota;
+        this.sexo = sexo;
+    }
 
-            System.out.print("Nome: ");
-            String nome = scanner.nextLine();
+    public String getNome() { return nome; }
+    public int getNota() { return nota; }
+    public char getSexo() { return sexo; }
 
-            int nota;
-            while (true) {
-                System.out.print("Nota (0 a 100): ");
-                nota = scanner.nextInt();
-                if (nota >= 0 && nota <= 100) break;
-                System.out.println("Nota inválida! Digite uma nota entre 0 e 100.");
-            }
+    public void setNome(String nome) { this.nome = nome; }
+    public void setNota(int nota) { this.nota = nota; }
+    public void setSexo(char sexo) { this.sexo = sexo; }
 
-            char sexo;
-            while (true) {
-                System.out.print("Sexo (M ou F): ");
-                sexo = scanner.next().toUpperCase().charAt(0);
-                if (sexo == 'M' || sexo == 'F') break;
-                System.out.println("Sexo inválido! Digite M ou F.");
-            }
-            scanner.nextLine();
+    public boolean estaAprovado() {
+        return nota >= 60;
+    }
 
-            somaNotasGeral += nota;
-            if (sexo == 'F') {
-                somaNotasFemininas += nota;
-                countFemininas++;
-            }
+    public String getSituacao() {
+        return estaAprovado() ? "APROVADO" : "REPROVADO";
+    }
 
-            if (nota >= 60) {
-                System.out.println("Situação: APROVADO");
-                if (sexo == 'M') aprovadosMasculino++;
-                nomesAprovados[countAprovados] = nome;
-                notasAprovados[countAprovados] = nota;
-                countAprovados++;
-            } else {
-                System.out.println("Situação: REPROVADO");
-                if (sexo == 'F') reprovadosFeminino++;
-            }
-            System.out.println("---------------------------");
-        }
+    @Override
+    public String toString() {
+        return String.format("%s | Nota: %d | Sexo: %c | Situação: %s", nome, nota, sexo, getSituacao());
+    }
+}
 
-        System.out.println("\n===== RESULTADOS FINAIS =====");
-        System.out.println("Número de aprovações do sexo masculino: " + aprovadosMasculino);
-        System.out.println("Número de reprovações do sexo feminino: " + reprovadosFeminino);
+// ---------------- CLASSE DE APLICAÇÃO ----------------
 
-        double mediaFeminina = countFemininas > 0 ? (double) somaNotasFemininas / countFemininas : 0;
-        double mediaGeral = (double) somaNotasGeral / TOTAL_ALUNOS;
+/**
+ * Classe principal que gerencia a execução do menu e dados dos alunos.
+ */
+class Aplicacao {
+    private final Scanner scanner = new Scanner(System.in);
+    private final ArrayList<Aluno> alunos = new ArrayList<>();
+    private final Menu menu = new Menu(scanner, alunos);
 
-        System.out.printf("Média das notas femininas: %.2f%n", mediaFeminina);
-        System.out.printf("Média geral das notas: %.2f%n", mediaGeral);
-
-        System.out.println("\nRELATÓRIO DE APROVADOS");
-        System.out.println("NOME");
-        for (int i = 0; i < countAprovados; i++) {
-            System.out.println(nomesAprovados[i]);
-        }
-        System.out.println("NOTA");
-        for (int i = 0; i < countAprovados; i++) {
-            System.out.println(notasAprovados[i]);
-        }
-
+    public void executar() {
+        int opcao;
+        do {
+            menu.exibir();
+            opcao = menu.lerOpcao();
+            menu.executarOpcao(opcao);
+        } while (opcao != 0);
         scanner.close();
+        System.out.println("Programa encerrado.");
+    }
+}
+
+// ---------------- CLASSE MENU ----------------
+
+/**
+ * Controlador de interface e opções disponíveis para o usuário.
+ */
+class Menu {
+    private final Scanner scanner;
+    private final ArrayList<Aluno> alunos;
+
+    public Menu(Scanner scanner, ArrayList<Aluno> alunos) {
+        this.scanner = scanner;
+        this.alunos = alunos;
+    }
+
+    public void exibir() {
+        System.out.println("\n===== MENU =====");
+        System.out.println("1. Adicionar aluno");
+        System.out.println("2. Listar alunos");
+        System.out.println("3. Atualizar aluno");
+        System.out.println("4. Remover aluno");
+        System.out.println("5. Ver estatísticas");
+        System.out.println("0. Sair");
+    }
+
+    public int lerOpcao() {
+        return Util.lerInteiro(scanner, "Escolha uma opção: ");
+    }
+
+    public void executarOpcao(int opcao) {
+        switch (opcao) {
+            case 1 -> adicionarAluno();
+            case 2 -> listarAlunos();
+            case 3 -> atualizarAluno();
+            case 4 -> removerAluno();
+            case 5 -> Estatisticas.exibir(alunos);
+            case 0 -> {}
+            default -> System.out.println("Opção inválida.");
+        }
+    }
+
+    private void adicionarAluno() {
+        String nome = Util.lerTexto(scanner, "Nome: ");
+        int nota = Util.lerNota(scanner);
+        char sexo = Util.lerSexo(scanner);
+
+        alunos.add(new Aluno(nome, nota, sexo));
+        System.out.println("Aluno adicionado com sucesso!");
+    }
+
+    private void listarAlunos() {
+        if (alunos.isEmpty()) {
+            System.out.println("Nenhum aluno cadastrado.");
+            return;
+        }
+
+        System.out.println("\nLISTA DE ALUNOS:");
+        for (int i = 0; i < alunos.size(); i++) {
+            System.out.printf("%d - %s%n", i, alunos.get(i));
+        }
+    }
+
+    private void atualizarAluno() {
+        listarAlunos();
+        if (alunos.isEmpty()) return;
+
+        int indice = Util.lerInteiro(scanner, "Número do aluno a atualizar: ");
+        if (!Util.indiceValido(indice, alunos.size())) return;
+
+        Aluno aluno = alunos.get(indice);
+
+        String novoNome = Util.lerTexto(scanner, "Novo nome (" + aluno.getNome() + "): ", true);
+        if (!novoNome.isEmpty()) aluno.setNome(novoNome);
+
+        String novaNota = Util.lerTexto(scanner, "Nova nota (" + aluno.getNota() + "): ", true);
+        if (!novaNota.isEmpty()) aluno.setNota(Integer.parseInt(novaNota));
+
+        String novoSexo = Util.lerTexto(scanner, "Novo sexo (" + aluno.getSexo() + "): ", true);
+        if (!novoSexo.isEmpty()) aluno.setSexo(novoSexo.toUpperCase().charAt(0));
+
+        System.out.println("Aluno atualizado com sucesso!");
+    }
+
+    private void removerAluno() {
+        listarAlunos();
+        if (alunos.isEmpty()) return;
+
+        int indice = Util.lerInteiro(scanner, "Número do aluno a remover: ");
+        if (!Util.indiceValido(indice, alunos.size())) return;
+
+        alunos.remove(indice);
+        System.out.println("Aluno removido com sucesso!");
+    }
+}
+
+// ---------------- CLASSE ESTATÍSTICAS ----------------
+
+/**
+ * Responsável por gerar e exibir estatísticas dos alunos.
+ */
+class Estatisticas {
+
+    public static void exibir(ArrayList<Aluno> alunos) {
+        if (alunos.isEmpty()) {
+            System.out.println("Nenhum aluno cadastrado.");
+            return;
+        }
+
+        int aprovadosM = 0, reprovadasF = 0, somaNotasF = 0, qtdF = 0, somaTotal = 0;
+
+        for (Aluno aluno : alunos) {
+            int nota = aluno.getNota();
+            somaTotal += nota;
+
+            if (aluno.getSexo() == 'F') {
+                somaNotasF += nota;
+                qtdF++;
+                if (!aluno.estaAprovado()) reprovadasF++;
+            } else if (aluno.getSexo() == 'M' && aluno.estaAprovado()) {
+                aprovadosM++;
+            }
+        }
+
+        double mediaF = qtdF > 0 ? (double) somaNotasF / qtdF : 0;
+        double mediaGeral = (double) somaTotal / alunos.size();
+
+        System.out.println("\n===== ESTATÍSTICAS =====");
+        System.out.println("Aprovados do sexo masculino: " + aprovadosM);
+        System.out.println("Reprovadas do sexo feminino: " + reprovadasF);
+        System.out.printf("Média das notas femininas: %.2f%n", mediaF);
+        System.out.printf("Média geral das notas: %.2f%n", mediaGeral);
+    }
+}
+
+// ---------------- CLASSE UTIL ----------------
+
+/**
+ * Classe utilitária para entrada e validação.
+ */
+class Util {
+
+    public static int lerNota(Scanner scanner) {
+        int nota;
+        do {
+            nota = lerInteiro(scanner, "Nota (0 a 100): ");
+            if (nota >= 0 && nota <= 100) return nota;
+            System.out.println("Nota inválida.");
+        } while (true);
+    }
+
+    public static char lerSexo(Scanner scanner) {
+        char sexo;
+        do {
+            System.out.print("Sexo (M ou F): ");
+            String entrada = scanner.nextLine().toUpperCase();
+            if (entrada.length() == 1) {
+                sexo = entrada.charAt(0);
+                if (sexo == 'M' || sexo == 'F') return sexo;
+            }
+            System.out.println("Sexo inválido.");
+        } while (true);
+    }
+
+    public static int lerInteiro(Scanner scanner, String mensagem) {
+        int valor;
+        while (true) {
+            System.out.print(mensagem);
+            if (scanner.hasNextInt()) {
+                valor = scanner.nextInt();
+                scanner.nextLine(); // limpar buffer
+                return valor;
+            } else {
+                System.out.println("Entrada inválida. Digite um número inteiro.");
+                scanner.next(); // limpar entrada inválida
+            }
+        }
+    }
+
+    public static String lerTexto(Scanner scanner, String mensagem, boolean podeSerVazio) {
+        String texto;
+        do {
+            System.out.print(mensagem);
+            texto = scanner.nextLine();
+            if (!texto.trim().isEmpty() || podeSerVazio) return texto.trim();
+            System.out.println("Entrada obrigatória.");
+        } while (true);
+    }
+
+    public static String lerTexto(Scanner scanner, String mensagem) {
+        return lerTexto(scanner, mensagem, false);
+    }
+
+    public static boolean indiceValido(int indice, int tamanhoLista) {
+        if (indice < 0 || indice >= tamanhoLista) {
+            System.out.println("Índice inválido.");
+            return false;
+        }
+        return true;
     }
 }
